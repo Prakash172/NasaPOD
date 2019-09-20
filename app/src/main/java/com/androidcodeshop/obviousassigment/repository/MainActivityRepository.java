@@ -32,13 +32,17 @@ public class MainActivityRepository {
             public void onResponse(Call<DayResponseDataModel> call, Response<DayResponseDataModel> response) {
                 if (response.body() != null) {
                     mDayResponse.setValue(response.body());
-                    Log.d(TAG, "onResponse: "+response.body().getTitle());
-                } else Log.d(TAG, "onResponse: response is null");
+                    Log.d(TAG, "onResponse: " + response.body().getTitle());
+                } else {
+                    mDayResponse.setValue(null);
+                    Log.d(TAG, "onResponse: response is null");
+                }
             }
 
             @Override
             public void onFailure(Call<DayResponseDataModel> call, Throwable t) {
                 Log.d(TAG, "onFailure: " + t.getMessage());
+                mDayResponse.setValue(null);
             }
 
         });
