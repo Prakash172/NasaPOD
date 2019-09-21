@@ -8,12 +8,12 @@ import android.support.annotation.NonNull;
 import com.androidcodeshop.obviousassigment.datamodels.DayResponseDataModel;
 import com.androidcodeshop.obviousassigment.repository.MainActivityRepository;
 
-public class MainActivityViewModel extends AndroidViewModel {
+public class ImageViewModel extends AndroidViewModel {
 
     private MutableLiveData<DayResponseDataModel> mDayResponseDataModelMutableLiveData;
     private MainActivityRepository mRepository;
 
-    public MainActivityViewModel(@NonNull Application application) {
+    public ImageViewModel(@NonNull Application application) {
         super(application);
         mRepository = MainActivityRepository.getInstance();
         mDayResponseDataModelMutableLiveData = mRepository.mDayResponse;

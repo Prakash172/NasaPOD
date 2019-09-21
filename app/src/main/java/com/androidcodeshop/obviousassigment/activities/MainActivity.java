@@ -1,10 +1,10 @@
 package com.androidcodeshop.obviousassigment.activities;
 
 import android.app.ProgressDialog;
+import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
@@ -18,7 +18,7 @@ import com.androidcodeshop.obviousassigment.adapters.ImageRecyclerViewAdapter;
 import com.androidcodeshop.obviousassigment.database.MyDatabase;
 import com.androidcodeshop.obviousassigment.datamodels.DayResponseDataModel;
 import com.androidcodeshop.obviousassigment.utils.AppUtils;
-import com.androidcodeshop.obviousassigment.viewmodels.MainActivityViewModel;
+import com.androidcodeshop.obviousassigment.viewmodels.ImageViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,13 +36,15 @@ public class MainActivity extends AppCompatActivity {
     Toolbar toolbar;
     @BindView(R.id.image_recycler_view)
     RecyclerView imageRecyclerView;
-    @BindView(R.id.fab_share)
+    @BindView(R.id.fab_sync)
     FloatingActionButton fab;
     private ArrayList<String> mImageUrls;
-    private ArrayList<DayResponseDataModel> responseDataModelArrayList;
+    public static ArrayList<DayResponseDataModel> responseDataModelArrayList;
     private ImageRecyclerViewAdapter mAdapter;
     private MyDatabase mDatabase;
-    private MainActivityViewModel mainActivityViewModel;
+    private ImageViewModel imageViewModel;
+    private MutableLiveData<DayResponseDataModel> dataModelMutableLiveData;
+    Observer<DayResponseDataModel> dataModelObserver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
         mImageUrls = new ArrayList<>();
         responseDataModelArrayList = new ArrayList<>();
         mDatabase = MyDatabase.getDatabase(this);
-        mainActivityViewModel = ViewModelProviders.of(this).get(MainActivityViewModel.class);
+        imageViewModel = ViewModelProviders.of(this).get(ImageViewModel.class);
         if (savedInstanceState != null) {
             if (savedInstanceState.getStringArrayList(IMAGE_URLS) != null)
                 mImageUrls.addAll(savedInstanceState.getStringArrayList(IMAGE_URLS));
@@ -61,7 +63,6 @@ public class MainActivity extends AppCompatActivity {
 
         setImageGrid();
 
-//        if (!sharedPreferences.getString("date", "").equals(AppUtils.getTodayDate()))
         if (mDatabase.resposeDao().getImageByDate(AppUtils.getTodayDate()) == null) {
             loadTodaysImage();
         }
@@ -76,6 +77,13 @@ public class MainActivity extends AppCompatActivity {
         outState.putStringArrayList(IMAGE_URLS, mImageUrls);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (dataModelMutableLiveData != null && dataModelObserver != null)
+            dataModelMutableLiveData.observe(this, dataModelObserver);
+    }
+
     private void loadTodaysImage() {
 
         ProgressDialog progressDialog = new ProgressDialog(this);
@@ -84,24 +92,21 @@ public class MainActivity extends AppCompatActivity {
         progressDialog.show();
         String currentDate = AppUtils.getTodayDate();
         Log.d(TAG, "loadTodaysImage: " + currentDate);
-        mainActivityViewModel
-                .getImageByDateObservable(currentDate, getString(R.string.api_key))
-                .observe(this, new Observer<DayResponseDataModel>() {
-                    @Override
-                    public void onChanged(@Nullable DayResponseDataModel dayResponseDataModel) {
-                        if (dayResponseDataModel != null) {
-                            Log.d(TAG, "onChanged: " + dayResponseDataModel.getTitle());
-                            mImageUrls.add(0, dayResponseDataModel.getUrl());
-                            mAdapter.notifyDataSetChanged();
-                            progressDialog.hide();
-                            responseDataModelArrayList.add(0, dayResponseDataModel);
-                            mDatabase.resposeDao().insert(dayResponseDataModel);
-                        } else {
-                            progressDialog.hide();
-                            Toast.makeText(MainActivity.this, "No Data For Today", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
+        dataModelMutableLiveData = imageViewModel.getImageByDateObservable(currentDate, getString(R.string.api_key));
+        dataModelObserver = dayResponseDataModel -> {
+            if (dayResponseDataModel != null) {
+                Log.d(TAG, "onChanged: " + dayResponseDataModel.getTitle());
+                mImageUrls.add(0, dayResponseDataModel.getUrl());
+                responseDataModelArrayList.add(0, dayResponseDataModel);
+                mAdapter.notifyDataSetChanged();
+                progressDialog.hide();
+                mDatabase.resposeDao().insert(dayResponseDataModel);
+            } else {
+                progressDialog.hide();
+                Toast.makeText(MainActivity.this, "No Data For Today", Toast.LENGTH_SHORT).show();
+            }
+        };
+        dataModelMutableLiveData.observe(this, dataModelObserver);
 
     }
 
@@ -121,8 +126,16 @@ public class MainActivity extends AppCompatActivity {
         imageRecyclerView.setAdapter(mAdapter);
     }
 
-    @OnClick(R.id.fab_share)
+    @OnClick(R.id.fab_sync)
     public void onViewClicked() {
+        setImageGrid();
+        Toast.makeText(this, "Data Synced", Toast.LENGTH_SHORT).show();
+    }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (dataModelObserver != null)
+            dataModelMutableLiveData.removeObserver(dataModelObserver);
     }
 }

@@ -36,10 +36,8 @@ public class CustomViewPager extends android.support.v4.view.ViewPager {
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        switch (ev.getAction() & MotionEventCompat.ACTION_MASK) {
-            case MotionEvent.ACTION_DOWN:
-                mStartDragX = ev.getX();
-                break;
+        if ((ev.getAction() & MotionEventCompat.ACTION_MASK) == MotionEvent.ACTION_DOWN) {
+            mStartDragX = ev.getX();
         }
         return super.onInterceptTouchEvent(ev);
     }
@@ -56,8 +54,7 @@ public class CustomViewPager extends android.support.v4.view.ViewPager {
                 case MotionEvent.ACTION_UP:
                     if (getCurrentItem() == 0 && x > mStartDragX) {
                         onSwipeOutAtStart();
-                    }
-                    if (getCurrentItem() == getAdapter().getCount() - 1 && x < mStartDragX) {
+                    }else if (getCurrentItem() == getAdapter().getCount() - 1 && x < mStartDragX) {
                         onSwipeOutAtEnd();
                     }
                     break;
@@ -71,7 +68,6 @@ public class CustomViewPager extends android.support.v4.view.ViewPager {
 
     public interface OnSwipeOutListener {
         void onSwipeOutAtStart();
-
         void onSwipeOutAtEnd();
     }
 }

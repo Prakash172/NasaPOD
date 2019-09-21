@@ -27,4 +27,11 @@ public class AppUtils {
         return nextDayStr;
     }
 
+    public static String previousDay(String currentDay){
+        String nextDayStr = "";
+        DateTime dateTime = DateTime.parse(currentDay, DateTimeFormat.forPattern(PATTERN));
+        nextDayStr = dateTime.plusDays(-1).toString(PATTERN);
+        return nextDayStr;
+    }
+
 }

@@ -1,6 +1,8 @@
 package com.androidcodeshop.obviousassigment.fragments;
 
 
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -14,6 +16,15 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.androidcodeshop.obviousassigment.R;
+import com.androidcodeshop.obviousassigment.activities.MainActivity;
+import com.androidcodeshop.obviousassigment.datamodels.DayResponseDataModel;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
+
+import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -26,7 +37,7 @@ import butterknife.Unbinder;
  */
 public class DetailViewFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String DATE_STR = "param1";
+    private static final String SELECTED_POSITION = "param1";
     @BindView(R.id.iv_display)
     ImageView ivDisplay;
     @BindView(R.id.frameLayout)
@@ -42,8 +53,10 @@ public class DetailViewFragment extends Fragment {
     @BindView(R.id.tv_description)
     TextView tvDescription;
     Unbinder unbinder;
-
-    private String mDate;
+    private static DayResponseDataModel dayResponseDataModel;
+    @BindView(R.id.tv_copyright)
+    TextView tvCopyright;
+    private int mPos;
 
 
     public DetailViewFragment() {
@@ -54,14 +67,14 @@ public class DetailViewFragment extends Fragment {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param date Parameter 1.
+     * @param pos Parameter 1.
      * @return A new instance of fragment DetailViewFragment.
      */
-    public static DetailViewFragment newInstance(String date) {
+    public static DetailViewFragment newInstance(int pos) {
         DetailViewFragment fragment = new DetailViewFragment();
-        Bundle args = new Bundle();
-        args.putString(DATE_STR, date);
-        fragment.setArguments(args);
+        Bundle bundle = new Bundle();
+        bundle.putInt(SELECTED_POSITION, pos);
+        fragment.setArguments(bundle);
         return fragment;
     }
 
@@ -69,7 +82,7 @@ public class DetailViewFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mDate = getArguments().getString(DATE_STR);
+            mPos = getArguments().getInt(SELECTED_POSITION);
         }
     }
 
@@ -86,7 +99,25 @@ public class DetailViewFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        tvDate.setText(mDate);
+        tvDate.setText(MainActivity.responseDataModelArrayList.get(mPos).getDate());
+        Glide.with(getContext())
+                .load(Uri.parse(MainActivity.responseDataModelArrayList.get(mPos).getUrl()))
+                .listener(new RequestListener<Drawable>() {
+                    @Override
+                    public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+
+                        return false;
+                    }
+                })
+                .into(ivDisplay);
+        tvDescription.setText(MainActivity.responseDataModelArrayList.get(mPos).getExplanation());
+        tvTitle.setText(MainActivity.responseDataModelArrayList.get(mPos).getTitle());
+        tvCopyright.setText(String.format(Locale.ENGLISH,"\u00a9 %s",MainActivity.responseDataModelArrayList.get(mPos).getCopyright()));
     }
 
     @Override

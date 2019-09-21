@@ -21,7 +21,8 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 
 public class ImageRecyclerViewAdapter extends RecyclerView.Adapter<ImageRecyclerViewAdapter.ViewHolder> {
-    public static final String SELECTED_DATE_STR = "date";
+    public static final String SELECTED_POS = "date";
+    public static int selectedPos = 0;
     private Context mContext;
     private List<DayResponseDataModel> imageUrls;
 
@@ -44,7 +45,8 @@ public class ImageRecyclerViewAdapter extends RecyclerView.Adapter<ImageRecycler
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(mContext, DetailViewActivity.class);
-                intent.putExtra(SELECTED_DATE_STR, imageUrls.get(i).getDate());
+                intent.putExtra(SELECTED_POS, i);
+                selectedPos = i;
                 mContext.startActivity(intent);
             }
         });
