@@ -1,6 +1,7 @@
 package com.androidcodeshop.obviousassigment.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
@@ -10,20 +11,21 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import com.androidcodeshop.obviousassigment.R;
+import com.androidcodeshop.obviousassigment.activities.DetailViewActivity;
+import com.androidcodeshop.obviousassigment.datamodels.DayResponseDataModel;
 import com.bumptech.glide.Glide;
 
-import java.net.URI;
-import java.net.URL;
-import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
 public class ImageRecyclerViewAdapter extends RecyclerView.Adapter<ImageRecyclerViewAdapter.ViewHolder> {
+    public static final String SELECTED_DATE_STR = "date";
     private Context mContext;
-    private ArrayList<String> imageUrls;
+    private List<DayResponseDataModel> imageUrls;
 
-    public ImageRecyclerViewAdapter(Context mContext, ArrayList<String> imageUrls) {
+    public ImageRecyclerViewAdapter(Context mContext, List<DayResponseDataModel> imageUrls) {
         this.mContext = mContext;
         this.imageUrls = imageUrls;
     }
@@ -37,7 +39,15 @@ public class ImageRecyclerViewAdapter extends RecyclerView.Adapter<ImageRecycler
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int i) {
-        Glide.with(mContext).load(Uri.parse(imageUrls.get(i))).into(viewHolder.image);
+        Glide.with(mContext).load(Uri.parse(imageUrls.get(i).getUrl())).into(viewHolder.image);
+        viewHolder.image.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(mContext, DetailViewActivity.class);
+                intent.putExtra(SELECTED_DATE_STR, imageUrls.get(i).getDate());
+                mContext.startActivity(intent);
+            }
+        });
     }
 
     @Override

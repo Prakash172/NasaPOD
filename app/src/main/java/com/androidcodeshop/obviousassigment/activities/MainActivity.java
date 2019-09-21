@@ -3,7 +3,6 @@ package com.androidcodeshop.obviousassigment.activities;
 import android.app.ProgressDialog;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -40,9 +39,10 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.fab_share)
     FloatingActionButton fab;
     private ArrayList<String> mImageUrls;
+    private ArrayList<DayResponseDataModel> responseDataModelArrayList;
     private ImageRecyclerViewAdapter mAdapter;
-    SharedPreferences.Editor mEditor;
     private MyDatabase mDatabase;
+    private MainActivityViewModel mainActivityViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,21 +51,22 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         setSupportActionBar(toolbar);
         mImageUrls = new ArrayList<>();
+        responseDataModelArrayList = new ArrayList<>();
         mDatabase = MyDatabase.getDatabase(this);
-        MainActivityViewModel mainActivityViewModel = ViewModelProviders.of(this).get(MainActivityViewModel.class);
+        mainActivityViewModel = ViewModelProviders.of(this).get(MainActivityViewModel.class);
         if (savedInstanceState != null) {
             if (savedInstanceState.getStringArrayList(IMAGE_URLS) != null)
                 mImageUrls.addAll(savedInstanceState.getStringArrayList(IMAGE_URLS));
         }
 
-        SharedPreferences sharedPreferences = getSharedPreferences(CURRENT_DATE, 0);
-        mEditor = sharedPreferences.edit();
         setImageGrid();
 
 //        if (!sharedPreferences.getString("date", "").equals(AppUtils.getTodayDate()))
         if (mDatabase.resposeDao().getImageByDate(AppUtils.getTodayDate()) == null) {
-            loadTodaysImage(mainActivityViewModel, mEditor);
+            loadTodaysImage();
         }
+
+        Log.d(TAG, "nextDay: " + AppUtils.nextDay(AppUtils.getTodayDate()));
 
     }
 
@@ -75,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
         outState.putStringArrayList(IMAGE_URLS, mImageUrls);
     }
 
-    private void loadTodaysImage(MainActivityViewModel mainActivityViewModel, SharedPreferences.Editor mEditor) {
+    private void loadTodaysImage() {
 
         ProgressDialog progressDialog = new ProgressDialog(this);
         progressDialog.setTitle("Wait...");
@@ -84,18 +85,18 @@ public class MainActivity extends AppCompatActivity {
         String currentDate = AppUtils.getTodayDate();
         Log.d(TAG, "loadTodaysImage: " + currentDate);
         mainActivityViewModel
-                .getImageByDateObservable(currentDate, "8dRnZMRZQKBGuPVu9OeHAUmc03c7qhGS97xKQM2a")
+                .getImageByDateObservable(currentDate, getString(R.string.api_key))
                 .observe(this, new Observer<DayResponseDataModel>() {
                     @Override
                     public void onChanged(@Nullable DayResponseDataModel dayResponseDataModel) {
-                        if(dayResponseDataModel != null) {
+                        if (dayResponseDataModel != null) {
                             Log.d(TAG, "onChanged: " + dayResponseDataModel.getTitle());
                             mImageUrls.add(0, dayResponseDataModel.getUrl());
                             mAdapter.notifyDataSetChanged();
                             progressDialog.hide();
-                            mEditor.putString("date", currentDate).apply();
+                            responseDataModelArrayList.add(0, dayResponseDataModel);
                             mDatabase.resposeDao().insert(dayResponseDataModel);
-                        }else {
+                        } else {
                             progressDialog.hide();
                             Toast.makeText(MainActivity.this, "No Data For Today", Toast.LENGTH_SHORT).show();
                         }
@@ -105,12 +106,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setImageGrid() {
+        //Clear the response
         mImageUrls.clear();
+        responseDataModelArrayList.clear();
+        //add the responses
         List<String> savedUrls = mDatabase.resposeDao().getAllImageUrls();
+        List<DayResponseDataModel> savedResponse = mDatabase.resposeDao().getAllResponse();
         mImageUrls.addAll(savedUrls);
+        responseDataModelArrayList.addAll(savedResponse);
+
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
         imageRecyclerView.setLayoutManager(gridLayoutManager);
-        mAdapter = new ImageRecyclerViewAdapter(this, mImageUrls);
+        mAdapter = new ImageRecyclerViewAdapter(this, savedResponse);
         imageRecyclerView.setAdapter(mAdapter);
     }
 
