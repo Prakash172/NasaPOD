@@ -52,14 +52,4 @@
         android:background="@android:color/white"
         app:layout_behavior="android.support.design.widget.AppBarLayout$ScrollingViewBehavior" />
 
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/fab_sync"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/fab_margin"
-        app:fabSize="normal"
-        app:layout_anchor="@id/app_bar"
-        app:layout_anchorGravity="bottom|end"
-        app:pressedTranslationZ="12dp"
-        app:srcCompat="@drawable/ic_sync_white_24dp" />
 </android.support.design.widget.CoordinatorLayout>

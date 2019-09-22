@@ -29,7 +29,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 
 public class ImageRecyclerViewAdapter extends RecyclerView.Adapter<ImageRecyclerViewAdapter.ViewHolder> {
-    public static final String SELECTED_POS = "date";
+    public static final String SELECTED_POS = "selected_position";
     public static int selectedPos = 0;
     private Context mContext;
     private List<DayResponseDataModel> imageUrls;

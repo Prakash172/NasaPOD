@@ -5,7 +5,7 @@ import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -25,26 +25,22 @@ import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
-    private static final String CURRENT_DATE = "current_date";
-    private static final String IMAGE_URLS = "image_urls";
     @BindView(R.id.toolbar)
     Toolbar toolbar;
     @BindView(R.id.image_recycler_view)
     RecyclerView imageRecyclerView;
-    @BindView(R.id.fab_sync)
-    FloatingActionButton fab;
-    private ArrayList<String> mImageUrls;
-    public static ArrayList<DayResponseDataModel> responseDataModelArrayList;
-    private ImageRecyclerViewAdapter mAdapter;
+
+    public static ArrayList<DayResponseDataModel> sResponseDataModelArrayList;
+    private ArrayList<DayResponseDataModel> mResponseDataModelArrayList;
+    public ImageRecyclerViewAdapter mAdapter;
     private MyDatabase mDatabase;
-    private ImageViewModel imageViewModel;
-    private MutableLiveData<DayResponseDataModel> dataModelMutableLiveData;
-    Observer<DayResponseDataModel> dataModelObserver;
+    private ImageViewModel mImageViewModel;
+    private MutableLiveData<DayResponseDataModel> mDataModelMutableLiveData;
+    Observer<DayResponseDataModel> mDataModelObserver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,90 +48,100 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         setSupportActionBar(toolbar);
-        mImageUrls = new ArrayList<>();
-        if (savedInstanceState != null) {
-            if (savedInstanceState.getStringArrayList(IMAGE_URLS) != null)
-                mImageUrls.addAll(savedInstanceState.getStringArrayList(IMAGE_URLS));
-        }
-        responseDataModelArrayList = new ArrayList<>();
-        imageViewModel = ViewModelProviders.of(this).get(ImageViewModel.class);
-        dataModelMutableLiveData = imageViewModel.getImageByDateObservable();
+
+        sResponseDataModelArrayList = new ArrayList<>();
+        mResponseDataModelArrayList = new ArrayList<>();
+        mImageViewModel = ViewModelProviders.of(this).get(ImageViewModel.class);
+        mDataModelMutableLiveData = mImageViewModel.getImageByDateObservable();
         mDatabase = MyDatabase.getDatabase(this);
+
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
+        imageRecyclerView.setLayoutManager(gridLayoutManager);
+        mAdapter = new ImageRecyclerViewAdapter(this, mResponseDataModelArrayList);
+        imageRecyclerView.setAdapter(mAdapter);
+
         setImageGrid();
 
         if (mDatabase.resposeDao().getImageByDate(AppUtils.getTodayDate()) == null) {
             loadTodaysImage(AppUtils.getTodayDate());
         }
-
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putStringArrayList(IMAGE_URLS, mImageUrls);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (mAdapter != null) mAdapter.notifyDataSetChanged();
-        if (dataModelMutableLiveData != null && dataModelObserver != null)
-            dataModelMutableLiveData.observe(this, dataModelObserver);
+
+        if (mDataModelMutableLiveData != null && mDataModelObserver != null)
+            mDataModelMutableLiveData.observe(this, mDataModelObserver);
     }
 
+    /*
+     * @param currentDate: current date is today's date,
+     * this method will run only once in a day to fetch the latest image if available
+     * */
     private void loadTodaysImage(String currentDate) {
         Log.d(TAG, "loadTodaysImage: " + currentDate);
         ProgressDialog progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Image is coming from satellite");
         progressDialog.show();
-        fab.setEnabled(false);
-        dataModelObserver = dayResponseDataModel -> {
+        mDataModelObserver = dayResponseDataModel -> {
             progressDialog.hide();
             if (dayResponseDataModel != null) {
                 Log.d(TAG, "onChanged: " + dayResponseDataModel.getTitle());
-                mImageUrls.add(0, dayResponseDataModel.getUrl());
-                responseDataModelArrayList.add(0, dayResponseDataModel);
+                sResponseDataModelArrayList.add(0, dayResponseDataModel);
+                mResponseDataModelArrayList.add(0, dayResponseDataModel);
                 mAdapter.notifyDataSetChanged();
                 mDatabase.resposeDao().insert(dayResponseDataModel);
             } else {
-                Toast.makeText(MainActivity.this, "No Data Found", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Today's Picture is not posted! Try Again Later", Toast.LENGTH_SHORT).show();
             }
-            fab.setEnabled(true);
         };
-        dataModelMutableLiveData.observe(this, dataModelObserver);
-        imageViewModel.getImageByDateNetworkCall(currentDate, getString(R.string.api_key));
+        mDataModelMutableLiveData.observe(this, mDataModelObserver);
+        mImageViewModel.getImageByDateNetworkCall(currentDate, getString(R.string.api_key));
     }
 
+
+    /**
+     * This method set up image grid from database for all the fetched images
+     */
 
     private void setImageGrid() {
         //Clear the response
-        mImageUrls.clear();
-        responseDataModelArrayList.clear();
-        //add the responses
-        List<String> savedUrls = mDatabase.resposeDao().getAllImageUrls();
-        List<DayResponseDataModel> savedResponse = mDatabase.resposeDao().getAllResponse();
-        mImageUrls.addAll(savedUrls);
-        responseDataModelArrayList.addAll(savedResponse);
-
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
-        imageRecyclerView.setLayoutManager(gridLayoutManager);
-        mAdapter = new ImageRecyclerViewAdapter(this, responseDataModelArrayList);
-        imageRecyclerView.setAdapter(mAdapter);
+        sResponseDataModelArrayList.clear();
+        mResponseDataModelArrayList.clear();
+        List<DayResponseDataModel> temp = mDatabase.resposeDao().getAllResponse();
+        sResponseDataModelArrayList.addAll(temp);
+        mResponseDataModelArrayList.addAll(temp);
+        mAdapter.notifyDataSetChanged();
     }
 
-    @OnClick(R.id.fab_sync)
-    public void onViewClicked() {
-
-        Toast.makeText(this, "Loading Today's Image....", Toast.LENGTH_SHORT).show();
-        if (mDatabase.resposeDao().getImageByDate(AppUtils.getTodayDate()) == null)
-            imageViewModel.getImageByDateNetworkCall(AppUtils.getTodayDate(), getString(R.string.api_key));
-        Toast.makeText(this, "Already Loaded", Toast.LENGTH_SHORT).show();
-    }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if (dataModelObserver != null)
-            dataModelMutableLiveData.removeObserver(dataModelObserver);
+        if (mDataModelObserver != null)
+            mDataModelMutableLiveData.removeObserver(mDataModelObserver);
+    }
+
+    // Double tap to exit
+    boolean doubleBackToExitPressedOnce = false;
+
+    @Override
+    public void onBackPressed() {
+        if (doubleBackToExitPressedOnce) {
+            super.onBackPressed();
+            return;
+        }
+
+        this.doubleBackToExitPressedOnce = true;
+        Toast.makeText(this, "Press BACK again to close", Toast.LENGTH_SHORT).show();
+
+        new Handler().postDelayed(new Runnable() {
+
+            @Override
+            public void run() {
+                doubleBackToExitPressedOnce = false;
+            }
+        }, 2000);
     }
 }

@@ -37,7 +37,7 @@
     <dimen name="material_component_cards_top_and_bottom_padding">16dp</dimen>
     <dimen name="material_component_cards_padding_from_edge_of_screen_to_card">8dp</dimen>
     <dimen name="material_component_cards_space_between_cards">8dp</dimen>
-    <dimen name="material_extended_top_app_bar_height">128dp</dimen>
+    <dimen name="material_extended_top_app_bar_height">150dp</dimen>
     <dimen name="material_top_app_bar_title_inset">72dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="card_elevation">6dp</dimen>

@@ -104,27 +104,29 @@ public class DetailViewFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        tvDate.setText(MainActivity.responseDataModelArrayList.get(mPos).getDate());
+        tvDate.setText(MainActivity.sResponseDataModelArrayList.get(mPos).getDate());
         Glide.with(getContext())
-                .load(Uri.parse(MainActivity.responseDataModelArrayList.get(mPos).getUrl()))
+                .load(Uri.parse(MainActivity.sResponseDataModelArrayList.get(mPos).getUrl()))
                 .listener(new RequestListener<Drawable>() {
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                        progressCircular.setVisibility(View.GONE);
+                        if (progressCircular != null)
+                            progressCircular.setVisibility(View.GONE);
                         tvNoImage.setText(getContext().getResources().getString(R.string.failed_label));
                         return false;
                     }
 
                     @Override
                     public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                        progressCircular.setVisibility(View.GONE);
+                        if (progressCircular != null)
+                            progressCircular.setVisibility(View.GONE);
                         return false;
                     }
                 })
                 .into(ivDisplay);
-        tvDescription.setText(MainActivity.responseDataModelArrayList.get(mPos).getExplanation());
-        tvTitle.setText(MainActivity.responseDataModelArrayList.get(mPos).getTitle());
-        tvCopyright.setText(String.format(Locale.ENGLISH, "\u00a9 %s", MainActivity.responseDataModelArrayList.get(mPos).getCopyright()));
+        tvDescription.setText(MainActivity.sResponseDataModelArrayList.get(mPos).getExplanation());
+        tvTitle.setText(MainActivity.sResponseDataModelArrayList.get(mPos).getTitle());
+        tvCopyright.setText(String.format(Locale.ENGLISH, "\u00a9 %s", MainActivity.sResponseDataModelArrayList.get(mPos).getCopyright()));
     }
 
     @Override

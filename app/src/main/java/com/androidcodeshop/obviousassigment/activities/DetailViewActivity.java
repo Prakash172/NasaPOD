@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.Toast;
 
 import com.androidcodeshop.obviousassigment.R;
 import com.androidcodeshop.obviousassigment.adapters.ImageRecyclerViewAdapter;
@@ -46,25 +47,30 @@ public class DetailViewActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         mDatabase = MyDatabase.getDatabase(this);
         contextActivity = this;
-        loadAllSavedResponse();
         Bundle bundle = getIntent().getExtras();
+
         if (bundle != null) {
             mSelectedDatePos = bundle.getInt(ImageRecyclerViewAdapter.SELECTED_POS);
         }
+
         mImageViewModel = ViewModelProviders.of(contextActivity).get(ImageViewModel.class);
         dataModelMutableLiveData = mImageViewModel.getImageByDateObservable();
+
         progressDialog = new ProgressDialog(contextActivity);
         progressDialog.setMessage("Fetching from satellite...");
+
         mAdapter = new ImageViewPagerAdapter(getSupportFragmentManager());
         viewpager.setAdapter(mAdapter);
         tabs.setupWithViewPager(viewpager);
         viewpager.setCurrentItem(mSelectedDatePos, true);
+
         dataModelMutableLiveData.observe(contextActivity, new Observer<DayResponseDataModel>() {
             @Override
             public void onChanged(@Nullable DayResponseDataModel dayResponseDataModel) {
                 if (dayResponseDataModel != null) {
                     onDataChange(dayResponseDataModel);
-                }
+                } else
+                    Toast.makeText(contextActivity, "Check Internet/ try again later", Toast.LENGTH_SHORT).show();
                 progressDialog.hide();
             }
         });
@@ -78,33 +84,24 @@ public class DetailViewActivity extends AppCompatActivity {
             public void onSwipeOutAtEnd() {
                 progressDialog.show();
                 int currentPos = viewpager.getCurrentItem();
-                String currentDate = MainActivity.responseDataModelArrayList.get(currentPos).getDate();
+                String currentDate = MainActivity.sResponseDataModelArrayList.get(currentPos).getDate();
                 String previousDay = AppUtils.previousDay(currentDate);
                 mImageViewModel.getImageByDateNetworkCall(previousDay, getString(R.string.api_key));
-
+                viewpager.setCurrentItem(viewpager.getCurrentItem()+1,true);
             }
         });
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
     }
 
     private void onDataChange(DayResponseDataModel dayResponseDataModel) {
-        MainActivity.responseDataModelArrayList.clear();
+        MainActivity.sResponseDataModelArrayList.clear();
         mDatabase.resposeDao().insert(dayResponseDataModel);
-        MainActivity.responseDataModelArrayList.addAll(mDatabase.resposeDao().getAllResponse());
+        MainActivity.sResponseDataModelArrayList.addAll(mDatabase.resposeDao().getAllResponse());
         mAdapter.notifyDataSetChanged();
-        viewpager.setCurrentItem(viewpager.getCurrentItem() + 1, true);
     }
 
-    private void loadAllSavedResponse() {
-        ProgressDialog progressDialog = new ProgressDialog(this);
-        progressDialog.setMessage("Fetching database");
-        progressDialog.show();
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mUrlResponses = mDatabase.resposeDao().getAllResponse();
-                progressDialog.hide();
-            }
-        });
-
-    }
 }
