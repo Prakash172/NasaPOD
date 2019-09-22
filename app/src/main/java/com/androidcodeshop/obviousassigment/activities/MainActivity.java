@@ -6,6 +6,8 @@ import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.design.widget.AppBarLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -26,7 +28,7 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
 
     private static final String TAG = "MainActivity";
     @BindView(R.id.toolbar)
@@ -35,6 +37,10 @@ public class MainActivity extends AppCompatActivity {
     RecyclerView imageRecyclerView;
 
     public static ArrayList<DayResponseDataModel> sResponseDataModelArrayList;
+    @BindView(R.id.app_bar)
+    AppBarLayout appBar;
+    @BindView(R.id.swipe_to_refresh)
+    SwipeRefreshLayout swipeToRefresh;
     private ArrayList<DayResponseDataModel> mResponseDataModelArrayList;
     public ImageRecyclerViewAdapter mAdapter;
     private MyDatabase mDatabase;
@@ -54,6 +60,13 @@ public class MainActivity extends AppCompatActivity {
         mImageViewModel = ViewModelProviders.of(this).get(ImageViewModel.class);
         mDataModelMutableLiveData = mImageViewModel.getImageByDateObservable();
         mDatabase = MyDatabase.getDatabase(this);
+
+        // swipe to refresh feature
+        swipeToRefresh.setOnRefreshListener(this);
+        swipeToRefresh.setColorSchemeResources(R.color.colorPrimary,
+                android.R.color.holo_green_dark,
+                android.R.color.holo_orange_dark,
+                android.R.color.holo_blue_dark);
 
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
         imageRecyclerView.setLayoutManager(gridLayoutManager);
@@ -143,5 +156,18 @@ public class MainActivity extends AppCompatActivity {
                 doubleBackToExitPressedOnce = false;
             }
         }, 2000);
+    }
+
+    @Override
+    public void onRefresh() {
+        if (mDatabase.resposeDao().getImageByDate(AppUtils.getTodayDate()) == null) {
+            loadTodaysImage(AppUtils.getTodayDate());
+        } else {
+            mResponseDataModelArrayList.clear();
+            mResponseDataModelArrayList.addAll(mDatabase.resposeDao().getAllResponse());
+            mAdapter.notifyDataSetChanged();
+            Toast.makeText(this, "Data refreshed", Toast.LENGTH_SHORT).show();
+            swipeToRefresh.setRefreshing(false);
+        }
     }
 }

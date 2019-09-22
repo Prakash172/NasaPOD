@@ -1,5 +1,6 @@
 package com.androidcodeshop.obviousassigment.utils;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
@@ -42,6 +43,7 @@ public class CustomViewPager extends android.support.v4.view.ViewPager {
         return super.onInterceptTouchEvent(ev);
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
 
