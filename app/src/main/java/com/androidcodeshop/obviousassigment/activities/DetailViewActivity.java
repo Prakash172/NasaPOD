@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.Toast;
 
 import com.androidcodeshop.obviousassigment.R;
 import com.androidcodeshop.obviousassigment.adapters.ImageRecyclerViewAdapter;
@@ -37,13 +36,14 @@ public class DetailViewActivity extends AppCompatActivity {
     private ImageViewModel mImageViewModel;
     private AppCompatActivity contextActivity;
     private boolean update = true;
+    private MutableLiveData<DayResponseDataModel> dataModelMutableLiveData;
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail_view);
         ButterKnife.bind(this);
-        mImageViewModel = ViewModelProviders.of(this).get(ImageViewModel.class);
         mDatabase = MyDatabase.getDatabase(this);
         contextActivity = this;
         loadAllSavedResponse();
@@ -51,49 +51,47 @@ public class DetailViewActivity extends AppCompatActivity {
         if (bundle != null) {
             mSelectedDatePos = bundle.getInt(ImageRecyclerViewAdapter.SELECTED_POS);
         }
-
+        mImageViewModel = ViewModelProviders.of(contextActivity).get(ImageViewModel.class);
+        dataModelMutableLiveData = mImageViewModel.getImageByDateObservable();
+        progressDialog = new ProgressDialog(contextActivity);
+        progressDialog.setMessage("Fetching from satellite...");
         mAdapter = new ImageViewPagerAdapter(getSupportFragmentManager());
         viewpager.setAdapter(mAdapter);
         tabs.setupWithViewPager(viewpager);
+        viewpager.setCurrentItem(mSelectedDatePos, true);
+        dataModelMutableLiveData.observe(contextActivity, new Observer<DayResponseDataModel>() {
+            @Override
+            public void onChanged(@Nullable DayResponseDataModel dayResponseDataModel) {
+                if (dayResponseDataModel != null) {
+                    onDataChange(dayResponseDataModel);
+                }
+                progressDialog.hide();
+            }
+        });
         viewpager.setOnSwipeOutListener(new CustomViewPager.OnSwipeOutListener() {
             @Override
             public void onSwipeOutAtStart() {
 
-                Toast.makeText(DetailViewActivity.this, "Swipe at start", Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onSwipeOutAtEnd() {
+                progressDialog.show();
                 int currentPos = viewpager.getCurrentItem();
                 String currentDate = MainActivity.responseDataModelArrayList.get(currentPos).getDate();
                 String previousDay = AppUtils.previousDay(currentDate);
-                update = true;
-                MutableLiveData<DayResponseDataModel> dataModelMutableLiveData = mImageViewModel.getImageByDateObservable(previousDay, getString(R.string.api_key));
-                ProgressDialog progressDialog = new ProgressDialog(contextActivity);
-                progressDialog.setMessage("Fetching from satellite...");
-                if (mDatabase.resposeDao().getImageByDate(previousDay) == null) {
-                    progressDialog.show();
-                    dataModelMutableLiveData.observe(contextActivity, new Observer<DayResponseDataModel>() {
-                        @Override
-                        public void onChanged(@Nullable DayResponseDataModel dayResponseDataModel) {
-                            if (dayResponseDataModel != null) {
-                                dataModelMutableLiveData.removeObserver(this);
-                                progressDialog.hide();
-                                if (update) {
-                                    MainActivity.responseDataModelArrayList.add(dayResponseDataModel);
-                                    mDatabase.resposeDao().insert(dayResponseDataModel);
-                                    mAdapter.notifyDataSetChanged();
-                                }
-                                update = false;
-                                viewpager.setCurrentItem(currentPos + 1, true);
-                            }
-                        }
-                    });
-                }
-                Toast.makeText(DetailViewActivity.this, "swiped at end", Toast.LENGTH_SHORT).show();
+                mImageViewModel.getImageByDateNetworkCall(previousDay, getString(R.string.api_key));
+
             }
         });
-        viewpager.setCurrentItem(mSelectedDatePos, true);
+    }
+
+    private void onDataChange(DayResponseDataModel dayResponseDataModel) {
+        MainActivity.responseDataModelArrayList.clear();
+        mDatabase.resposeDao().insert(dayResponseDataModel);
+        MainActivity.responseDataModelArrayList.addAll(mDatabase.resposeDao().getAllResponse());
+        mAdapter.notifyDataSetChanged();
+        viewpager.setCurrentItem(viewpager.getCurrentItem() + 1, true);
     }
 
     private void loadAllSavedResponse() {

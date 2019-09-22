@@ -20,6 +20,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <TextView
+            android:id="@+id/tv_no_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="Image loading...\n internet is slow or not connected" />
+
+        <ProgressBar
+            android:id="@+id/progress_circular"
+            android:layout_width="72dp"
+            android:layout_gravity="center"
+            android:layout_height="72dp" />
         <ImageView
             android:id="@+id/iv_display"
             android:layout_width="match_parent"
@@ -31,9 +43,9 @@
             android:id="@+id/tv_copyright"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="10dp"
             android:layout_gravity="bottom|end"
             android:background="@drawable/text_background_protection"
+            android:padding="10dp"
             android:textColor="@android:color/white"
             android:textSize="@dimen/copyright_text_size"
             tools:text="\u00a9 Prakash sharma" />
@@ -55,11 +67,11 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        tools:text="Date"
         android:padding="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/guideline_vertical"
-        app:layout_constraintTop_toBottomOf="@+id/frameLayout" />
+        app:layout_constraintTop_toBottomOf="@+id/frameLayout"
+        tools:text="Date" />
 
     <TextView
         android:id="@+id/tv_title"
@@ -68,13 +80,13 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        tools:text="Random title"
-        android:textStyle="bold"
-        android:textSize="18sp"
         android:textColor="@android:color/black"
+        android:textSize="18sp"
+        android:textStyle="bold"
         app:layout_constraintEnd_toStartOf="@+id/guideline_vertical"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/frameLayout" />
+        app:layout_constraintTop_toBottomOf="@+id/frameLayout"
+        tools:text="Random title" />
 
     <android.support.constraint.Guideline
         android:id="@+id/guideline_vertical"
@@ -84,23 +96,23 @@
         app:layout_constraintGuide_percent="0.70" />
 
     <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         android:fillViewport="true"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tv_title">
 
         <TextView
-            android:isScrollContainer="true"
             android:id="@+id/tv_description"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:isScrollContainer="true"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tv_title"

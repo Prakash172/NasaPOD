@@ -53,21 +53,19 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         setSupportActionBar(toolbar);
         mImageUrls = new ArrayList<>();
-        responseDataModelArrayList = new ArrayList<>();
-        mDatabase = MyDatabase.getDatabase(this);
-        imageViewModel = ViewModelProviders.of(this).get(ImageViewModel.class);
         if (savedInstanceState != null) {
             if (savedInstanceState.getStringArrayList(IMAGE_URLS) != null)
                 mImageUrls.addAll(savedInstanceState.getStringArrayList(IMAGE_URLS));
         }
-
+        responseDataModelArrayList = new ArrayList<>();
+        imageViewModel = ViewModelProviders.of(this).get(ImageViewModel.class);
+        dataModelMutableLiveData = imageViewModel.getImageByDateObservable();
+        mDatabase = MyDatabase.getDatabase(this);
         setImageGrid();
 
         if (mDatabase.resposeDao().getImageByDate(AppUtils.getTodayDate()) == null) {
-            loadTodaysImage();
+            loadTodaysImage(AppUtils.getTodayDate());
         }
-
-        Log.d(TAG, "nextDay: " + AppUtils.nextDay(AppUtils.getTodayDate()));
 
     }
 
@@ -80,35 +78,34 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (mAdapter != null) mAdapter.notifyDataSetChanged();
         if (dataModelMutableLiveData != null && dataModelObserver != null)
             dataModelMutableLiveData.observe(this, dataModelObserver);
     }
 
-    private void loadTodaysImage() {
-
-        ProgressDialog progressDialog = new ProgressDialog(this);
-        progressDialog.setTitle("Wait...");
-        progressDialog.setMessage("Picture is coming from satellite");
-        progressDialog.show();
-        String currentDate = AppUtils.getTodayDate();
+    private void loadTodaysImage(String currentDate) {
         Log.d(TAG, "loadTodaysImage: " + currentDate);
-        dataModelMutableLiveData = imageViewModel.getImageByDateObservable(currentDate, getString(R.string.api_key));
+        ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Image is coming from satellite");
+        progressDialog.show();
+        fab.setEnabled(false);
         dataModelObserver = dayResponseDataModel -> {
+            progressDialog.hide();
             if (dayResponseDataModel != null) {
                 Log.d(TAG, "onChanged: " + dayResponseDataModel.getTitle());
                 mImageUrls.add(0, dayResponseDataModel.getUrl());
                 responseDataModelArrayList.add(0, dayResponseDataModel);
                 mAdapter.notifyDataSetChanged();
-                progressDialog.hide();
                 mDatabase.resposeDao().insert(dayResponseDataModel);
             } else {
-                progressDialog.hide();
-                Toast.makeText(MainActivity.this, "No Data For Today", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "No Data Found", Toast.LENGTH_SHORT).show();
             }
+            fab.setEnabled(true);
         };
         dataModelMutableLiveData.observe(this, dataModelObserver);
-
+        imageViewModel.getImageByDateNetworkCall(currentDate, getString(R.string.api_key));
     }
+
 
     private void setImageGrid() {
         //Clear the response
@@ -122,14 +119,17 @@ public class MainActivity extends AppCompatActivity {
 
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
         imageRecyclerView.setLayoutManager(gridLayoutManager);
-        mAdapter = new ImageRecyclerViewAdapter(this, savedResponse);
+        mAdapter = new ImageRecyclerViewAdapter(this, responseDataModelArrayList);
         imageRecyclerView.setAdapter(mAdapter);
     }
 
     @OnClick(R.id.fab_sync)
     public void onViewClicked() {
-        setImageGrid();
-        Toast.makeText(this, "Data Synced", Toast.LENGTH_SHORT).show();
+
+        Toast.makeText(this, "Loading Today's Image....", Toast.LENGTH_SHORT).show();
+        if (mDatabase.resposeDao().getImageByDate(AppUtils.getTodayDate()) == null)
+            imageViewModel.getImageByDateNetworkCall(AppUtils.getTodayDate(), getString(R.string.api_key));
+        Toast.makeText(this, "Already Loaded", Toast.LENGTH_SHORT).show();
     }
 
     @Override

@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.androidcodeshop.obviousassigment.R;
@@ -56,6 +57,10 @@ public class DetailViewFragment extends Fragment {
     private static DayResponseDataModel dayResponseDataModel;
     @BindView(R.id.tv_copyright)
     TextView tvCopyright;
+    @BindView(R.id.tv_no_image)
+    TextView tvNoImage;
+    @BindView(R.id.progress_circular)
+    ProgressBar progressCircular;
     private int mPos;
 
 
@@ -105,19 +110,21 @@ public class DetailViewFragment extends Fragment {
                 .listener(new RequestListener<Drawable>() {
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                        progressCircular.setVisibility(View.GONE);
+                        tvNoImage.setText(getContext().getResources().getString(R.string.failed_label));
                         return false;
                     }
 
                     @Override
                     public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-
+                        progressCircular.setVisibility(View.GONE);
                         return false;
                     }
                 })
                 .into(ivDisplay);
         tvDescription.setText(MainActivity.responseDataModelArrayList.get(mPos).getExplanation());
         tvTitle.setText(MainActivity.responseDataModelArrayList.get(mPos).getTitle());
-        tvCopyright.setText(String.format(Locale.ENGLISH,"\u00a9 %s",MainActivity.responseDataModelArrayList.get(mPos).getCopyright()));
+        tvCopyright.setText(String.format(Locale.ENGLISH, "\u00a9 %s", MainActivity.responseDataModelArrayList.get(mPos).getCopyright()));
     }
 
     @Override

@@ -19,10 +19,10 @@ public class ImageViewModel extends AndroidViewModel {
         mDayResponseDataModelMutableLiveData = mRepository.mDayResponse;
     }
 
-    public MutableLiveData<DayResponseDataModel> getImageByDateObservable(String date, String api_key) {
-        DayResponseDataModel dayResponseDataModel = mRepository.getImageDataByDate(date, api_key).getValue();
-        if (dayResponseDataModel != null)
-            mDayResponseDataModelMutableLiveData.setValue(dayResponseDataModel);
+    public void getImageByDateNetworkCall(String date, String api_key) {
+        mDayResponseDataModelMutableLiveData = mRepository.getImageDataByDate(date, api_key);
+    }
+    public MutableLiveData<DayResponseDataModel> getImageByDateObservable() {
         return mDayResponseDataModelMutableLiveData;
     }
 
