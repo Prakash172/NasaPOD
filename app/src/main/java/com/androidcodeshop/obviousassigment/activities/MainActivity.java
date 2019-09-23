@@ -83,9 +83,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     @Override
     protected void onResume() {
         super.onResume();
-
-        if (mDataModelMutableLiveData != null && mDataModelObserver != null)
-            mDataModelMutableLiveData.observe(this, mDataModelObserver);
     }
 
     /*
